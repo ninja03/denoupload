@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>トレンド</title>
+</head>
+<body>
+<script type="module">
+    import { fetchJSON } from "https://code4sabae.github.io/js/fetchJSON.js";
+    window.good = async (id) => {
+        await fetchJSON("/api/good", {"id": id});
+        location.reload();
+    };
+    window.onload = async () => {
+        document.write("トレンド<br><br>");
+        let resp = await fetchJSON("/api/trend", {});
+        for (let i = 0; i < resp.length; i++) {
+            document.write(
+                (i + 1) +"位<br>" +
+                "ID:" + resp[i].id + "<br>"
+                + "<img src='" + resp[i].url + "' width='128' height='128'><br>"
+                + "<button onclick='good(" + resp[i].id + ")'>" + resp[i].good + "いいね</button><br>"
+                + "<hr>"
+            );
+        }
+    };
+</script>
+</body>
+</html>

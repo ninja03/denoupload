@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>投稿する</title>
+</head>
+<body>
+<input type="file" id="imgfile" multiple>
+<script type="module">
+    import { ImageUploader } from "https://code4sabae.github.io/js/ImageUploader.js";
+    import { fetchJSON } from "https://code4sabae.github.io/js/fetchJSON.js";
+    window.onload = async () => {
+        imgfile.onchange = async (e) => {
+            for (let i = 0; i < e.target.files.length; i++) {
+                let file = e.target.files[i];
+                let uploader = new ImageUploader("/data/");
+                // 最大幅1200px、最大ファイルサイズ1メガバイト
+                uploader.setFile(file, 1200, 1024 * 1024);
+                uploader.onload = async (url) => {
+                    await fetchJSON("/api/post", {"url": url});
+                };
+            }
+        };
+    };
+</script>
+</body>
+</html>
