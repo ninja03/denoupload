@@ -13,4 +13,4 @@ Denoで画像アップロードといいねのサンプルプログラムです
 参考にさせていただきました
 * Deno x Servest x JavaScript で始めるシンプルweb開発　https://fukuno.jig.jp/2943
 ***
-![スクショ](https://github.com/ninja03/denoupload/blob/main/ss4.png)
+<img src="https://github.com/ninja03/denoupload/blob/main/ss4.png" width="320">
