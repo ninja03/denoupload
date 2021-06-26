@@ -1,12 +1,30 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>タイムライン</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Deno Upload</title>
+  <script type="module" src="front.js">
+  </script>
+  <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
-<a href="post.html">投稿する</a><br>
-<a href="timeline.html">タイムライン</a><br>
-<a href="trend.html">トレンド</a><br>
+  <div x-data="main()" x-init="init()">
+    <div class="header">
+      <input type="file" id="imgfile" multiple @change="upload($event.target)">
+      <button @click="changeType" x-text="type"></button>
+    </div>
+    <div class="content">
+      <template x-for="t in timeline">
+        <div class="row">
+          <div x-text="t.id" class="id"></div>
+          <img :src="t.url" width="128" height="128" class="url">
+          <button @click="good(t.id)" x-text="t.good + 'いいね'" class="good"></button><br>
+        </div>
+      </template>
+    </div>
+  </div>
 </body>
 </html>
+
+

@@ -1,5 +1,5 @@
 // https://fukuno.jig.jp/2943
-import { Server } from "https://code4sabae.github.io/js/Server.js";
+import { Server } from "https://code4sabae.github.io/js/Server1.js";
 
 class MyServer extends Server {
     // 最初にDBをファイルから変数にロードして

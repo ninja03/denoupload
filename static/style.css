@@ -1,0 +1,44 @@
+body {
+  height: 100%;
+  background: lightblue;
+  margin: 0;
+}
+
+.header {
+  text-align: center;
+  background: gray;
+  color: white;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  height: 30px;
+}
+
+.content {
+  background: white;
+  width: 50%;
+  margin-top: 30px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.row {
+  border-bottom: 1px lightgray;
+  display: flex;
+  flex-direction: column;
+}
+
+.id {
+  text-align: center;
+}
+
+.url {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.good {
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 10px;
+}
