@@ -1,5 +1,20 @@
 // https://fukuno.jig.jp/2943
-import { Server } from "https://code4sabae.github.io/js/Server1.js";
+import { Server } from "https://code4sabae.github.io/js/Server1.js"
+import { jsonfs } from "https://code4sabae.github.io/js/jsonfs.js"
+
+class DB {
+  constructor() {
+    this.timeline = [];
+  }
+}
+
+class Post {
+  constructor(id, url) {
+    this.id = id;
+    this.url = url;
+    this.good = 0;
+  }
+}
 
 class MyServer extends Server {
   // 最初にDBをファイルから変数にロードして
@@ -12,14 +27,12 @@ class MyServer extends Server {
     try {
       // DBファイルの読み込み
       // ※誰かがこのapi関数にアクセスしているときは、ほかのユーザはその処理が終わるのを待つのでdb.jsonで不整合は生じない
-      db = JSON.parse(Deno.readTextFileSync("db.json"));
+      db = jsonfs.read("db.json");
     } catch (e) {
       // DBファイルがなければ空データの作成
-      db = {
-        timeline: [],
-      };
+      db = new DB();
     }
-    let resp = {}; // フロントエンドに返すJSON
+    let resp = {} // フロントエンドに返すJSON
     if (path === "/api/timeline") {
       // タイムラインをそのまま返す
       resp = db.timeline;
@@ -35,11 +48,7 @@ class MyServer extends Server {
         // 2つめ投稿以降は最新のID足す1
         nextid = db.timeline[0].id + 1;
       }
-      let newpost = {
-        id: nextid,
-        url: req.url,
-        good: 0,
-      };
+      const newpost = new Post(nextid, req.url);
       // timeline配列の先頭に追加する
       db.timeline.unshift(newpost);
     } else if (path === "/api/good") {
@@ -55,13 +64,14 @@ class MyServer extends Server {
       // いいねの多い順に並び替えて返す
       // db.timeline.sortにするとDBの内容まで変わってしまうので注意！
       // trend変数にコピー(slice)してからソートする
-      let trend = db.timeline.slice();
+      const trend = db.timeline.slice();
       trend.sort((a, b) => b.good - a.good);
       resp = trend;
     }
     // DBの保存
-    Deno.writeTextFileSync("db.json", JSON.stringify(db, null, "\t"));
+    jsonfs.write("db.json", db);
     return resp;
   }
 }
+
 new MyServer(80);
