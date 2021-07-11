@@ -1,6 +1,6 @@
 // https://fukuno.jig.jp/2943
-import { Server } from "https://code4sabae.github.io/js/Server1.js"
-import { jsonfs } from "https://code4sabae.github.io/js/jsonfs.js"
+import { Server } from "https://code4sabae.github.io/js/Server1.js";
+import { jsonfs } from "https://code4sabae.github.io/js/jsonfs.js";
 
 class DB {
   constructor() {
