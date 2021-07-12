@@ -2,10 +2,5 @@
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
   "editor.detectIndentation": false,
-  "deno.enable": true,
-  "deno.lint": true,
-  "deno.unstable": false,
-  "deno.suggest.imports.hosts": {
-    "https://code4sabae.github.io": false
-  }
+  "deno.enable": true
 }
