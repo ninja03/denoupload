@@ -14,7 +14,7 @@ class DB {
   }
 
   insert(post: Post): void {
-    let nextid;
+    let nextid: number;
     if (this.timeline.length == 0) {
       // 初投稿はIDを1にする
       nextid = 1;
