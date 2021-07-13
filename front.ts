@@ -33,7 +33,7 @@ class Client {
   async good(id: number): Promise<void> {
     await fetchJSON("/api/good", {id: id});
   }
-  upload(file: string, callback: any): void {
+  upload(file: File, callback: any): void {
     const uploader = new ImageUploader("/data/");
     // 最大幅1200px、最大ファイルサイズ1メガバイト
     uploader.setFile(file, 1200, 1024 * 1024);
@@ -57,7 +57,10 @@ const client = new Client();
     await client.reload(this.sort);
     this.timeline = client.timeline;
   },
-  upload(e: any): void {
+  upload(e: HTMLInputElement): void {
+    if (e.files == null) {
+      return;
+    }
     for (let i = 0; i < e.files.length; i++) {
       client.upload(e.files[i], () => this.reload());
     }
