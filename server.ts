@@ -4,15 +4,41 @@ import { jsonfs } from "https://code4sabae.github.io/js/jsonfs.js";
 
 class DB {
   timeline: Array<Post> = [];
+
+  static load(filename: string): DB {
+    try {
+      return jsonfs.read("db.json");
+    } catch (e) {
+      // DBファイルがなければ空データの作成
+      return new DB();
+    }
+  }
+
+  insert(post: Post): void {
+    let nextid;
+    if (this.timeline.length == 0) {
+      // 初投稿はIDを1にする
+      nextid = 1;
+    } else {
+      // 2つめ投稿以降は最新のID足す1
+      nextid = this.timeline[0].id! + 1;
+    }
+    post.id = nextid;
+    // timeline配列の先頭に追加する
+    this.timeline.unshift(post);
+  }
+
+  cloneTimeline(): Array<Post> {
+    return this.timeline.slice();
+  }
 }
 
 class Post {
-  id: number;
+  id?: number;
   url: string;
   good = 0;
 
-  constructor(id: number, url: string) {
-    this.id = id;
+  constructor(url: string) {
     this.url = url;
   }
 }
@@ -24,15 +50,9 @@ class MyServer extends Server {
   // reqにはPOSTで送るJSONが入っています
   // resp変数にフロントエンドに返したい内容をセットします
   api(path: string, req: any) {
-    let db: DB; // データベースの内容（db.json)
-    try {
-      // DBファイルの読み込み
-      // ※誰かがこのapi関数にアクセスしているときは、ほかのユーザはその処理が終わるのを待つのでdb.jsonで不整合は生じない
-      db = jsonfs.read("db.json");
-    } catch (e) {
-      // DBファイルがなければ空データの作成
-      db = new DB();
-    }
+    // DBファイルの読み込み
+    // ※誰かがこのapi関数にアクセスしているときは、ほかのユーザはその処理が終わるのを待つのでdb.jsonで不整合は生じない
+    let db = DB.load("db.json");
     let resp = {};  // フロントエンドに返すJSON
     if (path == "/api/timeline") {
       // タイムラインをそのまま返す
@@ -41,17 +61,7 @@ class MyServer extends Server {
       // タイムラインに投稿する
       // 画像ファイル自体は「/data/」のAPIで送られていて
       // 画像のURLがreq.urlで送られてくるのでそれを保存する
-      let nextid;
-      if (db.timeline.length == 0) {
-        // 初投稿はIDを1にする
-        nextid = 1;
-      } else {
-        // 2つめ投稿以降は最新のID足す1
-        nextid = db.timeline[0].id + 1;
-      }
-      const newpost = new Post(nextid, req.url)
-      // timeline配列の先頭に追加する
-      db.timeline.unshift(newpost);
+      db.insert(new Post(req.url));
     } else if (path == "/api/good") {
       // 写真にいいねをする
       // タイムラインからIDで探して、いいねを1増やす
@@ -65,7 +75,7 @@ class MyServer extends Server {
       // いいねの多い順に並び替えて返す
       // db.timeline.sortにするとDBの内容まで変わってしまうので注意！
       // trend変数にコピー(slice)してからソートする
-      const trend = db.timeline.slice();
+      const trend = db.cloneTimeline();
       trend.sort((a, b) => b.good - a.good);
       resp = trend;
     }
