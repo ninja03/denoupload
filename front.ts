@@ -1,3 +1,5 @@
+/// <reference lib="dom" />
+
 import Alpine from "https://taisukef.github.io/alpine_es/es/index.js";
 import { fetchJSON } from "https://code4sabae.github.io/js/fetchJSON.js";
 import { ImageUploader } from "https://code4sabae.github.io/js/ImageUploader.js";
