@@ -9,11 +9,11 @@ import { ImageUploader } from "https://code4sabae.github.io/js/ImageUploader.js"
 interface Post {
   id: number;
   url: string;
-  good: number
+  good: number;
 }
 
 class Client {
-  timeline: Array<Post> = [];
+  timeline: Post[] = [];
 
   async reload(type: string): Promise<void> {
     this.timeline = await fetchJSON("/api/" + type, {});
@@ -35,7 +35,7 @@ class Client {
 const client = new Client();
 
 (window as any).main = () => ({
-  timeline: [] as Array<Post>,
+  timeline: [] as Post[],
   type: "timeline",
   async init(): Promise<void> {
     await this.reload();

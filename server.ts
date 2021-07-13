@@ -3,7 +3,7 @@ import { Server } from "https://code4sabae.github.io/js/Server1.js";
 import { jsonfs } from "https://code4sabae.github.io/js/jsonfs.js";
 
 class DB {
-  timeline: Array<Post> = [];
+  timeline: Post[] = [];
 
   static load(filename: string): DB {
     try {
@@ -28,7 +28,7 @@ class DB {
     this.timeline.unshift(post);
   }
 
-  cloneTimeline(): Array<Post> {
+  cloneTimeline(): Post[] {
     return this.timeline.slice();
   }
 }
