@@ -5,12 +5,11 @@ import { jsonfs } from "https://code4sabae.github.io/js/jsonfs.js";
 class DB {
   timeline: Post[] = [];
 
-  static load(filename: string): DB {
+  constructor(filename: string){
     try {
-      return jsonfs.read("db.json");
+      this.timeline = jsonfs.read("db.json").timeline;
     } catch (e) {
       // DBファイルがなければ空データの作成
-      return new DB();
     }
   }
 
@@ -52,7 +51,7 @@ class MyServer extends Server {
   api(path: string, req: any) {
     // DBファイルの読み込み
     // ※誰かがこのapi関数にアクセスしているときは、ほかのユーザはその処理が終わるのを待つのでdb.jsonで不整合は生じない
-    let db = DB.load("db.json");
+    let db = new DB("db.json");
     let resp = {};  // フロントエンドに返すJSON
     if (path == "/api/timeline") {
       // タイムラインをそのまま返す

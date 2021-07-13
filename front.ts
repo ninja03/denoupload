@@ -12,10 +12,22 @@ interface Post {
   good: number;
 }
 
+enum TLSort { New, Trend }
+
+class Utils {
+  static tlSort2Type(sort: TLSort): string {
+    if (sort == TLSort.New) {
+      return "timeline";
+    }
+    return "trend";
+  }
+}
+
 class Client {
   timeline: Post[] = [];
 
-  async reload(type: string): Promise<void> {
+  async reload(sort: TLSort): Promise<void> {
+    const type = Utils.tlSort2Type(sort);
     this.timeline = await fetchJSON("/api/" + type, {});
   }
   async good(id: number): Promise<void> {
@@ -36,12 +48,13 @@ const client = new Client();
 
 (window as any).main = () => ({
   timeline: [] as Post[],
+  sort: TLSort.New,
   type: "timeline",
   async init(): Promise<void> {
     await this.reload();
   },
   async reload(): Promise<void> {
-    await client.reload(this.type);
+    await client.reload(this.sort);
     this.timeline = client.timeline;
   },
   upload(e: any): void {
@@ -50,7 +63,12 @@ const client = new Client();
     }
   },
   async changeType(): Promise<void> {
-    this.type = this.type == "timeline" ? "trend" : "timeline";
+    if (this.sort == TLSort.New) {
+      this.sort = TLSort.Trend;
+    } else {
+      this.sort = TLSort.New;
+    }
+    this.type = Utils.tlSort2Type(this.sort);
     await this.reload();
   },
   async good(id: number): Promise<void> {
