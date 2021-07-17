@@ -15,7 +15,7 @@ const getTimeline = (req) => {
   }
   const db = new DB("db.sqlite");
   const resp = [];
-  const list = db.query("select id, url, good from photo order by (?) desc", [sortKey]);
+  const list = db.query(`select id, url, good from photo order by ${sortKey} desc`);
   for (const [id, url, good] of list) {
     resp.push({id, url, good});
   }
