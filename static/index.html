@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width">
   <title>Deno Upload</title>
-  <script type="module" src="bundle.js">
+  <script type="module" src="front.js">
   </script>
   <link rel="stylesheet" type="text/css" href="style.css">
 </head>
@@ -12,7 +12,7 @@
   <div x-data="main()" x-init="init()">
     <div class="header">
       <input type="file" id="imgfile" multiple @change="upload($event.target)">
-      <button @click="changeType" x-text="type"></button>
+      <button @click="changeType" x-text="sort"></button>
     </div>
     <div class="content">
       <template x-for="t in timeline">
