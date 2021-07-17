@@ -9,7 +9,7 @@ window.main = () => ({
     await this.reload();
   },
   async reload() {
-    this.timeline = await fetchJSON(`/api/timeline`, {sort: this.sort});
+    this.timeline = await fetchJSON("/api/timeline", {sort: this.sort});
   },
   upload(e) {
     for (let i = 0; i < e.files.length; i++) {
