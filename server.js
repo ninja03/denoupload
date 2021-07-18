@@ -13,7 +13,7 @@ const getTimeline = (req) => {
   } else {
     return null;
   }
-  const db = new DB("db.sqlite");
+  const db = new DB("data.db");
   const resp = [];
   const list = db.query(`select id, url, good from photo order by ${sortKey} desc`);
   for (const [id, url, good] of list) {
@@ -27,7 +27,7 @@ const post = (req) => {
   // タイムラインに投稿する
   // 画像ファイル自体は「/data/」のAPIで送られていて
   // 画像のURLがreq.urlで送られてくるのでそれを保存する
-  const db = new DB("db.sqlite");
+  const db = new DB("data.db");
   db.query("insert into photo (url) values((?))", [req.url]);
   db.close();
   return {};
@@ -36,7 +36,7 @@ const post = (req) => {
 const good = (req) => {
   // 写真にいいねをする
   // いいねを1増やす
-  const db = new DB("db.sqlite");
+  const db = new DB("data.db");
   db.query("update photo set good = good + 1 where id = (?)", [req.id]);
   db.close();
   return {};

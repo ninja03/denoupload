@@ -1,8 +1,8 @@
-import Alpine from "https://taisukef.github.io/alpine_es/es/index.js";
+import Alpine from "https://unpkg.com/alpinejs@3.2.2/dist/module.esm.js";
 import { fetchJSON } from "https://code4sabae.github.io/js/fetchJSON.js";
 import { ImageUploader } from "https://code4sabae.github.io/js/ImageUploader.js";
 
-window.main = () => ({
+Alpine.data("main", () => ({
   timeline: [],
   sort: "new",
   async init() {
@@ -34,6 +34,6 @@ window.main = () => ({
     await fetchJSON("/api/good", {id: id});
     await this.reload();
   }
-});
+}));
 
-window.onload = () => Alpine.start();
+Alpine.start();
