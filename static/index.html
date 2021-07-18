@@ -8,9 +8,9 @@
   <script type="module" src="front.js"></script>
 </head>
 <body>
-  <div x-data="main()" x-init="init()">
+  <div x-data="app">
     <div class="header">
-      <input type="file" id="imgfile" multiple @change="upload($event.target)">
+      <input type="file" id="imgfile" multiple @change="upload($event.target.files)">
       <button @click="changeType" x-text="sort"></button>
     </div>
     <div class="content">
