@@ -2,17 +2,12 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Deno: Run",
-      "request": "launch",
+      "name": "Deno",
       "type": "pwa-node",
-      "program": "server.js",
+      "request": "launch",
       "cwd": "${workspaceFolder}",
       "runtimeExecutable": "deno",
-      "runtimeArgs": [
-        "run",
-        "--inspect",
-        "--allow-all"
-      ],
+      "runtimeArgs": ["run", "--inspect", "-A", "--unstable", "${file}"],
       "attachSimplePort": 9229,
       "outputCapture": "std"
     }

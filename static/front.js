@@ -3,17 +3,21 @@ import { fetchJSON } from "https://code4sabae.github.io/js/fetchJSON.js";
 import { ImageUploader } from "https://code4sabae.github.io/js/ImageUploader.js";
 
 Alpine.data("app", () => ({
+
   timeline: [],
   sort: "new",
+
   async init() {
     await this.reload();
   },
+
   async reload() {
     this.timeline = await fetchJSON("/api/timeline", {sort: this.sort});
   },
+
   upload(files) {
     for (const f of files) {
-      const up = new ImageUploader("/data/");
+      let up = new ImageUploader("/data/");
       // 最大幅1200px、最大ファイルサイズ1メガバイト
       up.setFile(f, 1200, 1024 * 1024);
       up.onload = async url => {
@@ -22,18 +26,17 @@ Alpine.data("app", () => ({
       }
     }
   },
+
   async changeType() {
-    if (this.sort === "new") {
-      this.sort = "trend";
-    } else {
-      this.sort = "new";
-    }
+    this.sort = this.sort === "new" ? "trend" : "new";
     await this.reload();
   },
+
   async good(id) {
     await fetchJSON("/api/good", {id});
     await this.reload();
   }
-}));
+
+}))
 
 Alpine.start();
