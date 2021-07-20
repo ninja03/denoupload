@@ -39,7 +39,8 @@
         up: null,
 
         async init() {
-          this.up = sessionStorage.getItem("up");
+          this.up = sessionStorage.up;
+          delete sessionStorage.up;
           await this.reload();
         },
 
