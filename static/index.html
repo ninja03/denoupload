@@ -6,13 +6,13 @@
     <meta name="viewport" content="width=device-width">
     <title>Deno Upload</title>
     <link href="https://unpkg.com/tailwindcss@2.2.4/dist/tailwind.css" rel="stylesheet">
-    <script type="module" src="front.js"></script>
   </head>
 
   <body class="bg-blue-200">
+
     <div x-data="app">
       <div class="bg-gray-500 text-center fixed top-0 w-full h-8">
-        <input type="file" multiple @change="upload($event.target.files)" class="text-white">
+        <button @click="location.href = 'upload.html'" class="bg-gray-300 p-1">アップロード</button>
         <button x-text="sort" @click="changeType" class="bg-gray-300 p-1"></button>
       </div>
       <div class="bg-white mx-auto w-1/2 mt-8 shadow-xl">
@@ -26,6 +26,42 @@
         </template>
       </div>
     </div>
+
+    <script type="module">
+      import Alpine from "https://unpkg.com/alpinejs@3.2.2/dist/module.esm.js";
+      import { fetchJSON } from "https://code4sabae.github.io/js/fetchJSON.js";
+
+      Alpine.data("app", () => ({
+
+        timeline: [],
+        sort: "新着順",
+
+        async init() {
+          await this.reload();
+        },
+
+        async reload() {
+          const sort = {
+            "新着順": "new",
+            "人気順": "trend"
+          }[this.sort];
+          this.timeline = await fetchJSON("/api/timeline", {sort: sort});
+        },
+
+        async changeType() {
+          this.sort = this.sort === "新着順" ? "人気順" : "新着順";
+          await this.reload();
+        },
+
+        async good(id) {
+          await fetchJSON("/api/good", {id});
+          await this.reload();
+        }
+
+      }))
+
+      Alpine.start();
+    </script>
 
   </body>
 </html>
