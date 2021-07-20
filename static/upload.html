@@ -37,6 +37,7 @@
             up.setFile(f, 1200, 1024 * 1024);
             up.onload = async url => {
               await fetchJSON("/api/post", { url: url });
+              sessionStorage.setItem("up", f.name);
               location.href = "index.html";
             }
           }

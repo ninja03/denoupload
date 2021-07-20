@@ -16,6 +16,7 @@
         <button x-text="sort" @click="changeType" class="bg-gray-300 p-1"></button>
       </div>
       <div class="bg-white mx-auto w-1/2 mt-8 shadow-xl">
+        <div x-show="up != null" x-text="`「${up}」をアップしました`" class="text-center"></div>
         <template x-for="t in timeline">
           <div class="flex flex-col">
             <div x-text="t.id" class="mx-auto"></div>
@@ -35,8 +36,10 @@
 
         timeline: [],
         sort: "新着順",
+        up: null,
 
         async init() {
+          this.up = sessionStorage.getItem("up");
           await this.reload();
         },
 
