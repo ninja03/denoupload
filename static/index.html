@@ -1,46 +1,23 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
     <title>Deno Upload</title>
     <link href="https://unpkg.com/tailwindcss@2.2.4/dist/tailwind.css" rel="stylesheet">
-  </head>
-
-  <body class="bg-blue-200">
-
-    <div x-data="app">
-      <div class="bg-gray-500 text-center fixed top-0 w-full h-8">
-        <button @click="location.href = 'upload.html'" class="bg-gray-300 p-1">アップロード</button>
-        <button x-text="sort" @click="changeType" class="bg-gray-300 p-1"></button>
-      </div>
-      <div class="bg-white mx-auto w-1/2 mt-8 shadow-xl">
-        <div x-show="up != null" x-text="`「${up}」をアップしました`" class="text-center"></div>
-        <template x-for="t in timeline">
-          <div class="flex flex-col">
-            <div x-text="t.id" class="mx-auto"></div>
-            <img :src="t.url" width="128" height="128" class="mx-auto">
-            <button @click="good(t.id)" x-text="`${t.good}いいね`" class="mx-auto bg-gray-300 p-1"></button>
-            <br>
-          </div>
-        </template>
-      </div>
-    </div>
-
     <script type="module">
       import Alpine from "https://unpkg.com/alpinejs@3.2.2/dist/module.esm.js";
       import { fetchJSON } from "https://code4sabae.github.io/js/fetchJSON.js";
+      import { ImageUploader } from "https://code4sabae.github.io/js/ImageUploader.js";
 
-      Alpine.data("app", () => ({
-
+      Alpine.data("data", () => ({
         timeline: [],
         sort: "新着順",
         up: null,
+        showTimeline: true,
+        showUpload: false,
 
         async init() {
-          this.up = sessionStorage.up;
-          delete sessionStorage.up;
           await this.reload();
         },
 
@@ -60,13 +37,76 @@
         async good(id) {
           await fetchJSON("/api/good", {id});
           await this.reload();
-        }
+        },
 
-      }))
+        openUpload() {
+          this.showTimeline = false;
+          this.showUpload = true;
+        },
+
+        async openTimeline() {
+          await this.reload();
+          this.showUpload = false;
+          this.showTimeline = true;
+        },
+
+        upload(files) {
+          for (const f of files) {
+            let up = new ImageUploader("/data/");
+            // 最大幅1200px、最大ファイルサイズ1メガバイト
+            up.setFile(f, 1200, 1024 * 1024);
+            up.onload = async url => {
+              await fetchJSON("/api/post", { url: url });
+              this.up = f.name;
+              this.openTimeline();
+            }
+          }
+        }
+      }));
 
       Alpine.start();
     </script>
+  </head>
 
+  <body class="bg-blue-200">
+    <div x-data="data">
+      <div class="bg-gray-500 text-center fixed top-0 w-full h-8">
+        <button @click="openUpload()" x-show="showTimeline" class="bg-gray-300 p-1">アップロード</button>
+        <button @click="openTimeline()" x-show="showUpload" class="bg-gray-300 p-1">タイムライン</button>
+        <button @click="changeType()" x-text="sort" x-show="showTimeline" class="bg-gray-300 p-1"></button>
+      </div>
+
+      <div x-show="showTimeline">
+        <div class="bg-gray-500 text-center fixed top-0 w-full h-8">
+          <button @click="openUpload()" class="bg-gray-300 p-1">アップロード</button>
+          <button @click="changeType()" x-text="sort" class="bg-gray-300 p-1"></button>
+        </div>
+        <div class="bg-white mx-auto w-1/2 mt-8 shadow-xl">
+          <div x-text="`「${up}」をアップしました`" x-show="up != null" class="text-center"></div>
+          <template x-for="t in timeline">
+            <div class="flex flex-col">
+              <div x-text="t.id" class="mx-auto"></div>
+              <img :src="t.url" width="128" height="128" class="mx-auto">
+              <button @click="good(t.id)" x-text="`${t.good}いいね`" class="mx-auto bg-gray-300 p-1"></button>
+              <br>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <div x-show="showUpload">
+        <div class="bg-gray-500 text-center fixed top-0 w-full h-8">
+          <button @click="openTimeline()" class="bg-gray-300 p-1">タイムライン</button>
+        </div>
+        <div class="bg-white mx-auto w-1/2 mt-8 shadow-xl text-center">
+          <br>
+          <label for="upload" class="bg-gray-300 p-1">ファイル選択</label>
+          <input id="upload" type="file" multiple @change="upload($event.target.files)" class="text-white hidden">
+          <br>
+          <br>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
 
