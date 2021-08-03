@@ -1,5 +1,7 @@
 {
   "recommendations": [
-    "denoland.vscode-deno"
+    "denoland.vscode-deno",
+    "hediet.vscode-drawio",
+    "ms-ceintl.vscode-language-pack-ja"
   ]
 }

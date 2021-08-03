@@ -4,63 +4,202 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
     <title>Deno Upload</title>
+    <link rel="icon" href="favicon.dio.svg" type="image/svg+xml">
     <link href="https://unpkg.com/tailwindcss@2.2.4/dist/tailwind.css" rel="stylesheet">
+    <style>
+      [x-cloak] { 
+        display: none;
+      }
+    </style>
     <script type="module">
       import Alpine from "https://unpkg.com/alpinejs@3.2.2/dist/module.esm.js";
       import { fetchJSON } from "https://code4sabae.github.io/js/fetchJSON.js";
       import { ImageUploader } from "https://code4sabae.github.io/js/ImageUploader.js";
 
       Alpine.data("data", () => ({
+        // CSSクラスで何回も使うのを定義しておきます
+        buttonStyle: "bg-gray-300 p-1 rounded",
+        darkButtonStyle: "bg-gray-500 text-white p-1 rounded",
+        dialogBackStyle: "absolute inset-0 flex justify-center items-center bg-black bg-opacity-50",
+        dialogForeStyle: "bg-white mx-auto w-1/2 mt-8 shadow-xl text-center p-1 rounded",
+
         timeline: [],
         sort: "新着順",
-        up: null,
-        showTimeline: true,
-        showUpload: false,
+        msg: null,
 
+        showUpload: false, // ログインダイアログ表示中か
+        showRegist: false, // ユーザ登録ダイアログ表示中か
+        showLogin: false,  // ログインダイアログ表示中か
+        preview: null,     // アップロード前画像プレビューのsrc
+        registName: "",    // ユーザ登録ダイアログ名前入力値
+        registPass: "",    // ユーザ登録ダイアログパスワード入力値
+        loginName: "",     // ログインダイアログ名前入力値
+        loginPass: "",     // ログインダイアログパスワード入力値
+        logined: false,    // ログイン中か
+        userName: "",      // ログイン中ユーザ名
+
+        // ページを開いたときはユーザ取得とタイムラインを取得
         async init() {
+          await this.reloadUser();
           await this.reload();
         },
 
+        // ユーザ取得
+        async reloadUser() {
+          try {
+            const u = await fetchJSON("/api/user", {
+              session: localStorage.session
+            });
+            this.logined = true;
+            this.userName = u.name;
+            return;
+          } catch {}
+          this.logined = false;
+          this.userName = null;
+        },
+
+        // タイムライン取得
         async reload() {
           const sort = {
             "新着順": "new",
             "人気順": "trend"
           }[this.sort];
-          this.timeline = await fetchJSON("/api/timeline", {sort: sort});
+          const path = this.logined ? "/api/timeline" : "/api/public_timeline";
+          this.timeline = await fetchJSON(path, {
+            session: localStorage.session,
+            sort: sort
+          });
         },
 
+        // タイムライン並び順変更
         async changeType() {
           this.sort = this.sort === "新着順" ? "人気順" : "新着順";
           await this.reload();
         },
 
-        async good(id) {
-          await fetchJSON("/api/good", {id});
+        // いいねする
+        async good(photo) {
+          if (!this.logined) {
+            this.alert("ログインが必要です");
+            return;
+          }
+          await fetchJSON("/api/good", {
+            session: localStorage.session,
+            photoId: photo.id,
+            del: photo.mygood
+          });
           await this.reload();
         },
 
+        // アップロードダイアログを開く
         openUpload() {
-          this.showTimeline = false;
           this.showUpload = true;
         },
 
-        async openTimeline() {
-          await this.reload();
-          this.showUpload = false;
-          this.showTimeline = true;
+        // ページ右下に通知文を表示(2秒間)
+        alert(msg) {
+          this.msg = msg;
+          setTimeout(() => {
+            this.msg = null;
+          }, 2000);
         },
 
-        upload(files) {
-          for (const f of files) {
-            let up = new ImageUploader("/data/");
-            // 最大幅1200px、最大ファイルサイズ1メガバイト
-            up.setFile(f, 1200, 1024 * 1024);
-            up.onload = async url => {
-              await fetchJSON("/api/post", { url: url });
-              this.up = f.name;
-              this.openTimeline();
-            }
+        // アップロードダイアログを閉じる
+        closeUpload() {
+          this.showUpload = false
+        },
+
+        // アップロードするファイルを選んだ
+        fileSelected() {
+          const reader = new FileReader();
+          reader.onload = () => {
+            this.preview = reader.result;
+          };
+          reader.readAsDataURL(inputFile.files[0]);
+        },
+
+        // アップロードする
+        upload() {
+          const f = inputFile.files[0];
+          let up = new ImageUploader("/data/");
+          // 最大幅1200px、最大ファイルサイズ1メガバイト
+          up.setFile(f, 1200, 1024 * 1024);
+          up.onload = async url => {
+            await fetchJSON("/api/post", {
+              session: localStorage.session,
+              url: url,
+            });
+            this.up = f.name;
+            this.alert("「" + this.up + "」をアップしました");
+            this.closeUpload();
+            this.reload();
           }
+        },
+      
+
+        // ユーザ登録ダイアログを開く
+        openRegist() {
+          this.showRegist = true;
+        },
+
+        // ユーザ登録をする
+        async regist() {
+          const r = await fetchJSON("/api/regist", {
+            name: this.registName,
+            pass: this.registPass
+          });
+          if (r.err) {
+            this.alert("登録されています");
+            return;
+          }
+          localStorage.session = r.session;
+          this.closeRegist();
+          await this.reloadUser();
+          this.alert("ユーザ登録しました");
+          await this.reload();
+        },
+
+        // ユーザ登録ダイアログを閉じる
+        closeRegist() {
+          this.showRegist = false;
+        },
+
+        // ログインダイアログを開く
+        openLogin() {
+          this.showLogin = true;
+        },
+
+        // ログインする
+        async login() {
+          const r = await fetchJSON("/api/login", {
+            name: this.loginName,
+            pass: this.loginPass
+          });
+          if (r.err) {
+            this.alert("ユーザ名かパスワードが違います");
+            return;
+          }
+          localStorage.session = r.session;
+          this.closeLogin();
+          await this.reloadUser();
+          this.alert("ログインしました");
+          await this.reload();
+        },
+
+        // ログインダイアログを閉じる
+        closeLogin() {
+          this.showLogin = false;
+        },
+
+        // ログアウトする
+        async logout() {
+          await fetchJSON("/api/logout", {
+            session: localStorage.session
+          });
+          delete localStorage.session;
+          this.reloadUser();
+          this.alert("ログアウトしました");
+          await this.reload();
         }
       }));
 
@@ -69,41 +208,77 @@
   </head>
 
   <body class="bg-blue-200">
-    <div x-data="data">
-      <div class="bg-gray-500 text-center fixed top-0 w-full h-8">
-        <button @click="openUpload()" x-show="showTimeline" class="bg-gray-300 p-1">アップロード</button>
-        <button @click="openTimeline()" x-show="showUpload" class="bg-gray-300 p-1">タイムライン</button>
-        <button @click="changeType()" x-text="sort" x-show="showTimeline" class="bg-gray-300 p-1"></button>
+    <div x-data="data" x-cloak>
+
+      <div x-text="msg" x-show="msg != null" class="absolute bottom-0 right-0 p-2 bg-blue-400 text-white"></div>
+
+      <div class="bg-blue-400 text-center fixed top-0 w-full p-1">
+        <img src="logo.dio.svg" class="inline">
+        <span x-show="logined" x-text="userName + 'さん'" class="text-white"></span>
+        <button @click="openRegist()" x-show="!logined" :class="buttonStyle">ユーザ登録</button>
+        <button @click="openLogin()" x-show="!logined" :class="buttonStyle">ログイン</button>
+        <button @click="logout()" x-show="logined" :class="buttonStyle">ログアウト</button>
+        <button @click="openUpload()" x-show="logined" :class="buttonStyle">アップロード</button>
+        <button @click="changeType()" x-text="sort" :class="buttonStyle"></button>
       </div>
 
-      <div x-show="showTimeline">
-        <div class="bg-gray-500 text-center fixed top-0 w-full h-8">
-          <button @click="openUpload()" class="bg-gray-300 p-1">アップロード</button>
-          <button @click="changeType()" x-text="sort" class="bg-gray-300 p-1"></button>
-        </div>
-        <div class="bg-white mx-auto w-1/2 mt-8 shadow-xl">
-          <div x-text="`「${up}」をアップしました`" x-show="up != null" class="text-center"></div>
+      <div>
+        <div class="bg-white mx-auto w-2/3 mt-12 shadow-xl">
           <template x-for="t in timeline">
             <div class="flex flex-col">
               <div x-text="t.id" class="mx-auto"></div>
-              <img :src="t.url" width="128" height="128" class="mx-auto">
-              <button @click="good(t.id)" x-text="`${t.good}いいね`" class="mx-auto bg-gray-300 p-1"></button>
+              <img :src="t.url" style="width: 360px" class="mx-auto rounded">
+              <button @click="good(t)" x-text="t.good + 'いいね'"
+                :class="{
+                  'bg-gray-500 text-white p-1 mx-auto mt-2 rounded': t.mygood,
+                  'bg-gray-300 p-1 mx-auto mt-2 rounded': !t.mygood
+                }"></button>
               <br>
             </div>
           </template>
         </div>
       </div>
 
-      <div x-show="showUpload">
-        <div class="bg-gray-500 text-center fixed top-0 w-full h-8">
-          <button @click="openTimeline()" class="bg-gray-300 p-1">タイムライン</button>
+      <div x-show="showRegist" :class="dialogBackStyle" x-transition>
+        <div @click.outside="closeRegist()" :class="dialogForeStyle">
+          <p>
+            ユーザ名: <input x-model="registName" type="text" class="border border-black p-1 rounded">
+          </p>
+          <p>
+            パスワード: <input x-model="registPass" type="text" autocomplete="off" class="border border-black p-1 rounded">
+          </p>
+          <p>
+            <button @click="regist()" :class="buttonStyle">登録</button>
+          </p>
         </div>
-        <div class="bg-white mx-auto w-1/2 mt-8 shadow-xl text-center">
-          <br>
-          <label for="upload" class="bg-gray-300 p-1">ファイル選択</label>
-          <input id="upload" type="file" multiple @change="upload($event.target.files)" class="text-white hidden">
-          <br>
-          <br>
+      </div>
+
+      <div x-show="showLogin" :class="dialogBackStyle" x-transition>
+        <div @click.outside="closeLogin()" :class="dialogForeStyle">
+          <p>
+            ユーザ名: <input type="text" x-model="loginName" class="border border-black p-1 rounded">
+          </p>
+          <p>
+            パスワード: <input type="text" x-model="loginPass" autocomplete="off" class="border border-black p-1 rounded">
+          </p>
+          <p>
+            <button @click="login()" :class="buttonStyle">ログイン</button>
+          </p>
+        </div>
+      </div>
+
+      <div x-show="showUpload" :class="dialogBackStyle" x-transition>
+        <div @click.outside="closeUpload()" :class="dialogForeStyle">
+          <p class="m-2">
+            <img :src="preview" style="width: 480px" class="mx-auto rounded">
+          </p>
+          <p class="m-2">
+            <label for="inputFile" :class="buttonStyle">ファイル選択</label>
+            <input @change="fileSelected()" id="inputFile" type="file" required class="text-white hidden">
+          </p>
+          <p class="m-2">
+            <button @click="upload()" :class="buttonStyle">アップロード</button>
+          </p>
         </div>
       </div>
     </div>
