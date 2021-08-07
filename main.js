@@ -1,12 +1,12 @@
 // Serverは[Server.js](https://fukuno.jig.jp/2943)を使います
 // HTMLファイルや画像はstaticフォルダに置きます
-import { Server } from "https://code4sabae.github.io/js/Server.js";
+import { Server } from "https://ninja03.github.io/denokun/lib/Server.js";
 
 // DBはデータはSQLiteに保存してdeno-sqliteで読み書きします
-import { DB } from "https://deno.land/x/sqlite/mod.ts";
+import { DB } from "https://deno.land/x/sqlite@v3.0.0/mod.ts";
 
 // bcryptはパスワードハッシュ化用です
-import * as bcrypt from "https://deno.land/x/bcrypt/mod.ts";
+import * as bcrypt from "https://deno.land/x/bcrypt@v0.2.4/mod.ts";
 
 class MyServer extends Server {
   // SQLiteのデータベースを開きます
@@ -17,6 +17,8 @@ class MyServer extends Server {
   // レスポンスをJSONオブジェクトで返します
   // 何も返さないと「not found」という文字が返ります
   async api(path, req) {
+    console.log(path, req);
+
     // セッション不要API
     switch (path) {
       case "/api/regist":          return this.regist(req);
@@ -34,11 +36,11 @@ class MyServer extends Server {
     const r = this.db.query(
       "select id from user where session = (?)",
       [req.session]
-    ).next();
-    if (r.value == null) {
+    )[0];
+    if (r === undefined) {
       return;
     }
-    const [userId] = r.value;
+    const [userId] = r;
 
     switch (path) {
       case "/api/user":     return this.getUser(req, userId);
@@ -54,8 +56,8 @@ class MyServer extends Server {
     const r = this.db.query(
       "select name from user where id = (?) limit 1",
       [userId]
-    ).next();
-    const [name] = r.value;
+    )[0];
+    const [name] = r;
     return {
       name: name
     };
@@ -66,8 +68,8 @@ class MyServer extends Server {
     const r = this.db.query(
       "select count(*) from user where name = (?)",
       [req.name]
-    ).next();
-    if (r.value == 1) {
+    )[0];
+    if (r[0] == 1) {
       return { err: "登録されています" };
     }
     const pass = await bcrypt.hash(req.pass);
@@ -86,18 +88,20 @@ class MyServer extends Server {
   // DB内のハッシュ値と比較します
   // 合っていればセッションをランダムに作ってDBに保存して
   // レスポンスで返します
-  login(req) {
+  async login(req) {
     const r = this.db.query(
       `select id, pass
         from user
         where name = (?) limit 1`,
       [req.name]
-    ).next();
-    if (r.value == null) {
+    )[0];
+    if (r === undefined) {
       return { err: "登録されていません" };
     }
-    const [id, pass] = r.value;
-    if (!bcrypt.compare(pass, req.pass)) {
+    const [id, pass] = r;
+    // ハッシュは2番目の引数に
+    const passok = await bcrypt.compare(req.pass, pass);
+    if (!passok) {
       return { err: "パスワードが違います" };
     }
     const session = crypto.randomUUID();
@@ -202,11 +206,11 @@ class MyServer extends Server {
       `select count(*)
         from good where user_id = (?) and photo_id = (?)`,
       [userId, req.photoId]
-    ).next();
-    if (req.del && r.value != 1) {
+    )[0];
+    if (req.del && r[0] !== 1) {
       return;
     }
-    if (!req.del && r.value == 1) {
+    if (!req.del && r[0] === 1) {
       return;
     }
     // 2つのテーブルを変更するのでトランザクション処理をします
@@ -274,4 +278,4 @@ db.query(`
 db.close();
 
 // 80番ポートでサーバを起動
-const s = new MyServer(80);
+const s = new MyServer(8881);

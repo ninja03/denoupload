@@ -5,18 +5,81 @@
     <meta name="viewport" content="width=device-width">
     <title>Deno Upload</title>
     <link rel="icon" href="favicon.dio.svg" type="image/svg+xml">
-    <link href="https://unpkg.com/tailwindcss@2.2.4/dist/tailwind.css" rel="stylesheet">
+    <link href="https://unpkg.com/tailwindcss@2.2.7/dist/tailwind.css" rel="stylesheet">
     <style>
       [x-cloak] { 
         display: none;
       }
     </style>
-    <script type="module">
-      import Alpine from "https://unpkg.com/alpinejs@3.2.2/dist/module.esm.js";
-      import { fetchJSON } from "https://code4sabae.github.io/js/fetchJSON.js";
-      import { ImageUploader } from "https://code4sabae.github.io/js/ImageUploader.js";
+  </head>
 
-      Alpine.data("data", () => ({
+  <body class="bg-blue-200">
+    <div x-data="app()" x-cloak>
+      <div x-text="msg" x-show="msg != null" class="absolute bottom-0 right-0 p-2 bg-blue-400 text-white"></div>
+
+      <div class="bg-blue-400 text-center fixed top-0 w-full p-1">
+        <img src="logo.dio.svg" class="inline">
+        <span x-show="logined" x-text="userName + 'さん'" class="text-white"></span>
+        <button @click="openRegist()" x-show="!logined" :class="buttonStyle">ユーザ登録</button>
+        <button @click="openLogin()" x-show="!logined" :class="buttonStyle">ログイン</button>
+        <button @click="logout()" x-show="logined" :class="buttonStyle">ログアウト</button>
+        <button @click="openUpload()" x-show="logined" :class="buttonStyle">アップロード</button>
+        <button @click="changeType()" x-text="sort" :class="buttonStyle"></button>
+      </div>
+
+      <div>
+        <div class="bg-white mx-auto w-2/3 mt-12 shadow-xl">
+          <template x-for="t in timeline">
+            <div class="flex flex-col">
+              <div x-text="t.id" class="mx-auto"></div>
+              <img :src="t.url" style="width: 360px" class="mx-auto rounded">
+              <button @click="good(t)" x-text="t.good + 'いいね'"
+                :class="{
+                  'bg-gray-500 text-white p-1 mx-auto mt-2 rounded': t.mygood,
+                  'bg-gray-300 p-1 mx-auto mt-2 rounded': !t.mygood
+                }"></button>
+              <br>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <div x-show="showRegist" :class="dialogBackStyle" x-transition>
+        <div @click.outside="closeRegist()" :class="dialogForeStyle">
+          <p>ユーザ名: <input x-model="registName" type="text" class="border border-black p-1 rounded"></p>
+          <p>パスワード: <input x-model="registPass" type="text" autocomplete="off" class="border border-black p-1 rounded"></p>
+          <p><button @click="regist()" :class="buttonStyle">登録</button></p>
+        </div>
+      </div>
+
+      <div x-show="showLogin" :class="dialogBackStyle" x-transition>
+        <div @click.outside="closeLogin()" :class="dialogForeStyle">
+          <p>ユーザ名: <input type="text" x-model="loginName" class="border border-black p-1 rounded"></p>
+          <p>パスワード: <input type="text" x-model="loginPass" autocomplete="off" class="border border-black p-1 rounded"></p>
+          <p><button @click="login()" :class="buttonStyle">ログイン</button></p>
+        </div>
+      </div>
+
+      <div x-show="showUpload" :class="dialogBackStyle" x-transition>
+        <div @click.outside="closeUpload()" :class="dialogForeStyle">
+          <p class="m-2"><img :src="preview" style="width: 480px" class="mx-auto rounded"></p>
+          <p class="m-2">
+            <label :class="buttonStyle">
+              ファイル選択
+              <input id="inputFile" @change="fileSelected()" type="file" required class="text-white hidden">
+            </label>
+          </p>
+          <p class="m-2"><button @click="upload()" :class="buttonStyle">アップロード</button></p>
+        </div>
+      </div>
+    </div>
+    
+    <script type="module">
+      import Alpine from "https://unpkg.com/alpinejs@3.2.3/dist/module.esm.js";
+      import { fetchJSON } from "https://ninja03.github.io/denokun/lib/fetchJSON.js";
+      import { ImageUploader } from "https://ninja03.github.io/denokun/lib/ImageUploader.js";
+
+      Alpine.data("app", () => ({
         // CSSクラスで何回も使うのを定義しておきます
         buttonStyle: "bg-gray-300 p-1 rounded",
         darkButtonStyle: "bg-gray-500 text-white p-1 rounded",
@@ -26,7 +89,6 @@
         timeline: [],
         sort: "新着順",
         msg: null,
-
         showUpload: false, // ログインダイアログ表示中か
         showRegist: false, // ユーザ登録ダイアログ表示中か
         showLogin: false,  // ログインダイアログ表示中か
@@ -37,6 +99,7 @@
         loginPass: "",     // ログインダイアログパスワード入力値
         logined: false,    // ログイン中か
         userName: "",      // ログイン中ユーザ名
+        server: location.protocol + "//" + location.hostname + ":8881",
 
         // ページを開いたときはユーザ取得とタイムラインを取得
         async init() {
@@ -47,7 +110,7 @@
         // ユーザ取得
         async reloadUser() {
           try {
-            const u = await fetchJSON("/api/user", {
+            const u = await fetchJSON(this.server + "/api/user", {
               session: localStorage.session
             });
             this.logined = true;
@@ -64,7 +127,7 @@
             "新着順": "new",
             "人気順": "trend"
           }[this.sort];
-          const path = this.logined ? "/api/timeline" : "/api/public_timeline";
+          const path = this.server + (this.logined ? "/api/timeline" : "/api/public_timeline");
           this.timeline = await fetchJSON(path, {
             session: localStorage.session,
             sort: sort
@@ -83,7 +146,7 @@
             this.alert("ログインが必要です");
             return;
           }
-          await fetchJSON("/api/good", {
+          await fetchJSON(this.server + "/api/good", {
             session: localStorage.session,
             photoId: photo.id,
             del: photo.mygood
@@ -121,11 +184,11 @@
         // アップロードする
         upload() {
           const f = inputFile.files[0];
-          let up = new ImageUploader("/data/");
+          let up = new ImageUploader(this.server + "/data/");
           // 最大幅1200px、最大ファイルサイズ1メガバイト
           up.setFile(f, 1200, 1024 * 1024);
           up.onload = async url => {
-            await fetchJSON("/api/post", {
+            await fetchJSON(this.server + "/api/post", {
               session: localStorage.session,
               url: url,
             });
@@ -144,7 +207,7 @@
 
         // ユーザ登録をする
         async regist() {
-          const r = await fetchJSON("/api/regist", {
+          const r = await fetchJSON(this.server + "/api/regist", {
             name: this.registName,
             pass: this.registPass
           });
@@ -171,7 +234,7 @@
 
         // ログインする
         async login() {
-          const r = await fetchJSON("/api/login", {
+          const r = await fetchJSON(this.server + "/api/login", {
             name: this.loginName,
             pass: this.loginPass
           });
@@ -193,10 +256,11 @@
 
         // ログアウトする
         async logout() {
-          await fetchJSON("/api/logout", {
+          await fetchJSON(this.server + "/api/logout", {
             session: localStorage.session
           });
           delete localStorage.session;
+          this.logined = false;
           this.reloadUser();
           this.alert("ログアウトしました");
           await this.reload();
@@ -205,83 +269,6 @@
 
       Alpine.start();
     </script>
-  </head>
-
-  <body class="bg-blue-200">
-    <div x-data="data" x-cloak>
-
-      <div x-text="msg" x-show="msg != null" class="absolute bottom-0 right-0 p-2 bg-blue-400 text-white"></div>
-
-      <div class="bg-blue-400 text-center fixed top-0 w-full p-1">
-        <img src="logo.dio.svg" class="inline">
-        <span x-show="logined" x-text="userName + 'さん'" class="text-white"></span>
-        <button @click="openRegist()" x-show="!logined" :class="buttonStyle">ユーザ登録</button>
-        <button @click="openLogin()" x-show="!logined" :class="buttonStyle">ログイン</button>
-        <button @click="logout()" x-show="logined" :class="buttonStyle">ログアウト</button>
-        <button @click="openUpload()" x-show="logined" :class="buttonStyle">アップロード</button>
-        <button @click="changeType()" x-text="sort" :class="buttonStyle"></button>
-      </div>
-
-      <div>
-        <div class="bg-white mx-auto w-2/3 mt-12 shadow-xl">
-          <template x-for="t in timeline">
-            <div class="flex flex-col">
-              <div x-text="t.id" class="mx-auto"></div>
-              <img :src="t.url" style="width: 360px" class="mx-auto rounded">
-              <button @click="good(t)" x-text="t.good + 'いいね'"
-                :class="{
-                  'bg-gray-500 text-white p-1 mx-auto mt-2 rounded': t.mygood,
-                  'bg-gray-300 p-1 mx-auto mt-2 rounded': !t.mygood
-                }"></button>
-              <br>
-            </div>
-          </template>
-        </div>
-      </div>
-
-      <div x-show="showRegist" :class="dialogBackStyle" x-transition>
-        <div @click.outside="closeRegist()" :class="dialogForeStyle">
-          <p>
-            ユーザ名: <input x-model="registName" type="text" class="border border-black p-1 rounded">
-          </p>
-          <p>
-            パスワード: <input x-model="registPass" type="text" autocomplete="off" class="border border-black p-1 rounded">
-          </p>
-          <p>
-            <button @click="regist()" :class="buttonStyle">登録</button>
-          </p>
-        </div>
-      </div>
-
-      <div x-show="showLogin" :class="dialogBackStyle" x-transition>
-        <div @click.outside="closeLogin()" :class="dialogForeStyle">
-          <p>
-            ユーザ名: <input type="text" x-model="loginName" class="border border-black p-1 rounded">
-          </p>
-          <p>
-            パスワード: <input type="text" x-model="loginPass" autocomplete="off" class="border border-black p-1 rounded">
-          </p>
-          <p>
-            <button @click="login()" :class="buttonStyle">ログイン</button>
-          </p>
-        </div>
-      </div>
-
-      <div x-show="showUpload" :class="dialogBackStyle" x-transition>
-        <div @click.outside="closeUpload()" :class="dialogForeStyle">
-          <p class="m-2">
-            <img :src="preview" style="width: 480px" class="mx-auto rounded">
-          </p>
-          <p class="m-2">
-            <label for="inputFile" :class="buttonStyle">ファイル選択</label>
-            <input @change="fileSelected()" id="inputFile" type="file" required class="text-white hidden">
-          </p>
-          <p class="m-2">
-            <button @click="upload()" :class="buttonStyle">アップロード</button>
-          </p>
-        </div>
-      </div>
-    </div>
   </body>
 </html>
 
