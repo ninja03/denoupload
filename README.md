@@ -10,7 +10,6 @@ Denoで画像アップロードといいねのサンプルプログラムです
 * IDと画像URLといいね数はdata.dbに保存されます
 * 画像データはdataディレクトリに保存されます
 
-参考にさせていただきました
-* Deno x Servest x JavaScript で始めるシンプルweb開発　https://fukuno.jig.jp/2943
-***
-<img src="https://github.com/ninja03/denoupload/blob/main/ss4.png" width="320">
+<img src="https://ninja03.github.io/denokun/assets/image/denoup.jpg" width="320">
+
+Deno x Servest x JavaScript で始めるシンプルweb開発　https://fukuno.jig.jp/2943
