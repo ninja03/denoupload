@@ -8,6 +8,8 @@ import { DB } from "https://deno.land/x/sqlite@v3.0.0/mod.ts";
 // bcryptはパスワードハッシュ化用です
 import * as bcrypt from "https://deno.land/x/bcrypt@v0.2.4/mod.ts";
 
+console.log("denoupload");
+
 class MyServer extends Server {
   // SQLiteのデータベースを開きます
   db = new DB("data.db");
