@@ -7,36 +7,36 @@
     <link rel="icon" href="favicon.dio.svg" type="image/svg+xml">
     <link href="https://unpkg.com/tailwindcss@2.2.7/dist/tailwind.css" rel="stylesheet">
     <style>
-      [x-cloak] { 
+      [x-cloak] {
         display: none;
       }
     </style>
   </head>
 
   <body class="bg-blue-200">
-    <div x-data="app()" x-cloak>
+    <div x-data="app" x-cloak>
       <div x-text="msg" x-show="msg != null" class="absolute bottom-0 right-0 p-2 bg-blue-400 text-white"></div>
 
       <div class="bg-blue-400 text-center fixed top-0 w-full p-1">
         <img src="logo.dio.svg" class="inline">
-        <span x-show="logined" x-text="userName + 'さん2'" class="text-white"></span>
+        <span x-text="userName + 'さん'" x-show="logined" class="text-white"></span>
         <button @click="openRegist()" x-show="!logined" :class="buttonStyle">ユーザ登録</button>
-        <button @click="openLogin()" x-show="!logined" :class="buttonStyle">ログイン</button>
-        <button @click="logout()" x-show="logined" :class="buttonStyle">ログアウト</button>
-        <button @click="openUpload()" x-show="logined" :class="buttonStyle">アップロード</button>
-        <button @click="changeType()" x-text="sort" :class="buttonStyle"></button>
+        <button @click="openLogin()"  x-show="!logined" :class="buttonStyle">ログイン</button>
+        <button @click="logout()"     x-show="logined"  :class="buttonStyle">ログアウト</button>
+        <button @click="openUpload()" x-show="logined"  :class="buttonStyle">アップロード</button>
+        <button @click="changeType()" x-text="sort"     :class="buttonStyle"></button>
       </div>
 
       <div>
         <div class="bg-white mx-auto w-2/3 mt-12 shadow-xl">
-          <template x-for="t in timeline">
+          <template x-for="photo in timeline">
             <div class="flex flex-col">
-              <div x-text="t.id" class="mx-auto"></div>
-              <img :src="t.url" style="width: 360px" class="mx-auto rounded">
-              <button @click="good(t)" x-text="t.good + 'いいね'"
+              <div x-text="photo.id" class="mx-auto"></div>
+              <img :src="photo.url" style="width: 360px" class="mx-auto rounded">
+              <button x-text="photo.good + 'いいね'" @click="good(photo)"
                 :class="{
-                  'bg-gray-500 text-white p-1 mx-auto mt-2 rounded': t.mygood,
-                  'bg-gray-300 p-1 mx-auto mt-2 rounded': !t.mygood
+                  'bg-gray-500 text-white p-1 mx-auto mt-2 rounded': photo.mygood,
+                  'bg-gray-300 p-1 mx-auto mt-2 rounded': !photo.mygood
                 }"></button>
               <br>
             </div>
@@ -66,7 +66,7 @@
           <p class="m-2">
             <label :class="buttonStyle">
               ファイル選択
-              <input id="inputFile" @change="fileSelected()" type="file" required class="text-white hidden">
+              <input id="inputFile" @change="fileSelected" type="file" required class="text-white hidden">
             </label>
           </p>
           <p class="m-2"><button @click="upload()" :class="buttonStyle">アップロード</button></p>
@@ -101,43 +101,41 @@
         userName: "",      // ログイン中ユーザ名
         server: location.protocol + "//" + location.hostname + ":8881",
 
+        // API通信
+        async fetchAPI(path, req = {}) {
+          req.session = localStorage.session;
+          return await fetchJSON(this.server + "/api/" + path, req);
+        },
+
         // ページを開いたときはユーザ取得とタイムラインを取得
         async init() {
           await this.reloadUser();
-          await this.reload();
+          await this.reloadTimeline();
         },
 
         // ユーザ取得
         async reloadUser() {
           try {
-            const u = await fetchJSON(this.server + "/api/user", {
-              session: localStorage.session
-            });
+            const u = await this.fetchAPI("user");
             this.logined = true;
             this.userName = u.name;
-            return;
-          } catch {}
-          this.logined = false;
-          this.userName = null;
+          } catch {
+            this.logined = false;
+            this.userName = null;
+          }
         },
 
         // タイムライン取得
-        async reload() {
-          const sort = {
-            "新着順": "new",
-            "人気順": "trend"
-          }[this.sort];
-          const path = this.server + (this.logined ? "/api/timeline" : "/api/public_timeline");
-          this.timeline = await fetchJSON(path, {
-            session: localStorage.session,
-            sort: sort
-          });
+        async reloadTimeline() {
+          const sort = { "新着順": "new", "人気順": "trend" }[this.sort];
+          const path = this.logined ? "timeline" : "public_timeline";
+          this.timeline = await this.fetchAPI(path, { sort: sort });
         },
 
         // タイムライン並び順変更
         async changeType() {
           this.sort = this.sort === "新着順" ? "人気順" : "新着順";
-          await this.reload();
+          await this.reloadTimeline();
         },
 
         // いいねする
@@ -146,12 +144,11 @@
             this.alert("ログインが必要です");
             return;
           }
-          await fetchJSON(this.server + "/api/good", {
-            session: localStorage.session,
+          await this.fetchAPI("good", {
             photoId: photo.id,
             del: photo.mygood
           });
-          await this.reload();
+          await this.reloadTimeline();
         },
 
         // アップロードダイアログを開く
@@ -162,22 +159,18 @@
         // ページ右下に通知文を表示(2秒間)
         alert(msg) {
           this.msg = msg;
-          setTimeout(() => {
-            this.msg = null;
-          }, 2000);
+          setTimeout(() => { this.msg = null }, 2000);
         },
 
         // アップロードダイアログを閉じる
         closeUpload() {
-          this.showUpload = false
+          this.showUpload = false;
         },
 
         // アップロードするファイルを選んだ
         fileSelected() {
           const reader = new FileReader();
-          reader.onload = () => {
-            this.preview = reader.result;
-          };
+          reader.onload = () => { this.preview = reader.result; }
           reader.readAsDataURL(inputFile.files[0]);
         },
 
@@ -188,14 +181,11 @@
           // 最大幅1200px、最大ファイルサイズ1メガバイト
           up.setFile(f, 1200, 1024 * 1024);
           up.onload = async url => {
-            await fetchJSON(this.server + "/api/post", {
-              session: localStorage.session,
-              url: url,
-            });
+            await this.fetchAPI("post", { url });
             this.up = f.name;
-            this.alert("「" + this.up + "」をアップしました");
+            this.alert("「" + this.up + "をアップしました");
             this.closeUpload();
-            this.reload();
+            this.reloadTimeline();
           }
         },
       
@@ -207,19 +197,19 @@
 
         // ユーザ登録をする
         async regist() {
-          const r = await fetchJSON(this.server + "/api/regist", {
+          const r = await this.fetchAPI("regist", {
             name: this.registName,
             pass: this.registPass
           });
           if (r.err) {
-            this.alert("登録されています");
+            this.alert("登録されています")
             return;
           }
           localStorage.session = r.session;
           this.closeRegist();
           await this.reloadUser();
           this.alert("ユーザ登録しました");
-          await this.reload();
+          await this.reloadTimeline();
         },
 
         // ユーザ登録ダイアログを閉じる
@@ -234,7 +224,7 @@
 
         // ログインする
         async login() {
-          const r = await fetchJSON(this.server + "/api/login", {
+          const r = await this.fetchAPI("login", {
             name: this.loginName,
             pass: this.loginPass
           });
@@ -246,7 +236,7 @@
           this.closeLogin();
           await this.reloadUser();
           this.alert("ログインしました");
-          await this.reload();
+          await this.reloadTimeline();
         },
 
         // ログインダイアログを閉じる
@@ -256,14 +246,12 @@
 
         // ログアウトする
         async logout() {
-          await fetchJSON(this.server + "/api/logout", {
-            session: localStorage.session
-          });
+          await this.fetchAPI("logout");
           delete localStorage.session;
           this.logined = false;
           this.reloadUser();
-          this.alert("ログアウトしました");
-          await this.reload();
+          this.alert("ログアウトしました")
+          await this.reloadTimeline();
         }
       }));
 
