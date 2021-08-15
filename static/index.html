@@ -83,19 +83,10 @@
         dialogBackStyle: "absolute inset-0 flex justify-center items-center bg-black bg-opacity-50",
         dialogForeStyle: "bg-white mx-auto w-1/2 mt-8 shadow-xl text-center p-1 rounded",
 
-        timeline: [],
-        sort: "新着順",
-        msg: null,
-        showUpload: false, // ログインダイアログ表示中か
-        showRegist: false, // ユーザ登録ダイアログ表示中か
-        showLogin: false,  // ログインダイアログ表示中か
-        preview: null,     // アップロード前画像プレビューのsrc
-        registName: "",    // ユーザ登録ダイアログ名前入力値
-        registPass: "",    // ユーザ登録ダイアログパスワード入力値
-        loginName: "",     // ログインダイアログ名前入力値
-        loginPass: "",     // ログインダイアログパスワード入力値
-        logined: false,    // ログイン中か
         userName: "",      // ログイン中ユーザ名
+        logined: false,    // ログイン中か
+        timeline: [],
+
         server: location.protocol + "//" + location.hostname + ":8881",
 
         // API通信
@@ -129,6 +120,9 @@
           this.timeline = await this.fetchAPI(path, { sort: sort });
         },
 
+        // 並び替えボタン
+        sort: "新着順",
+
         // タイムライン並び順変更
         async changeType() {
           this.sort = this.sort === "新着順" ? "人気順" : "新着順";
@@ -138,7 +132,7 @@
         // いいねする
         async good(photo) {
           if (!this.logined) {
-            this.alert("ログインが必要です");
+            this.toast("ログインが必要です");
             return;
           }
           await this.fetchAPI("good", {
@@ -147,16 +141,88 @@
           });
           await this.reloadTimeline();
         },
+      
+        // ユーザ登録ダイアログ
+        showRegist: false, // ユーザ登録ダイアログ表示中か
+        registName: "",    // ユーザ登録ダイアログ名前入力値
+        registPass: "",    // ユーザ登録ダイアログパスワード入力値
+
+        // ユーザ登録ダイアログを開く
+        openRegist() {
+          this.showRegist = true;
+        },
+
+        // ユーザ登録ダイアログを閉じる
+        closeRegist() {
+          this.showRegist = false;
+        },
+
+        // ユーザ登録をする
+        async regist() {
+          const r = await this.fetchAPI("regist", {
+            name: this.registName,
+            pass: this.registPass
+          });
+          if (r.err) {
+            this.toast("登録されています")
+            return;
+          }
+          localStorage.session = r.session;
+          this.closeRegist();
+          await this.reloadUser();
+          this.toast("ユーザ登録しました");
+          await this.reloadTimeline();
+        },
+
+        // ログインダイアログ
+        showLogin: false,  // ログインダイアログ表示中か
+        loginName: "",     // ログインダイアログ名前入力値
+        loginPass: "",     // ログインダイアログパスワード入力値
+
+        // ログインダイアログを開く
+        openLogin() {
+          this.showLogin = true;
+        },
+        
+        // ログインダイアログを閉じる
+        closeLogin() {
+          this.showLogin = false;
+        },
+
+        // ログインする
+        async login() {
+          const r = await this.fetchAPI("login", {
+            name: this.loginName,
+            pass: this.loginPass
+          });
+          if (r.err) {
+            this.toast("ユーザ名かパスワードが違います");
+            return;
+          }
+          localStorage.session = r.session;
+          this.closeLogin();
+          await this.reloadUser();
+          this.toast("ログインしました");
+          await this.reloadTimeline();
+        },
+
+        // ログアウトする
+        async logout() {
+          await this.fetchAPI("logout");
+          delete localStorage.session;
+          this.logined = false;
+          this.reloadUser();
+          this.toast("ログアウトしました")
+          await this.reloadTimeline();
+        },
+
+        // アップロードダイアログ
+        showUpload: false, // アップロードダイアログ表示中か
+        preview: null,     // アップロード前画像プレビューのsrc
 
         // アップロードダイアログを開く
         openUpload() {
           this.showUpload = true;
-        },
-
-        // ページ右下に通知文を表示(2秒間)
-        alert(msg) {
-          this.msg = msg;
-          setTimeout(() => { this.msg = null }, 2000);
         },
 
         // アップロードダイアログを閉じる
@@ -180,76 +246,20 @@
           up.onload = async url => {
             await this.fetchAPI("post", { url });
             this.up = f.name;
-            this.alert("「" + this.up + "をアップしました");
+            this.toast("「" + this.up + "をアップしました");
             this.closeUpload();
             this.reloadTimeline();
           }
         },
-      
 
-        // ユーザ登録ダイアログを開く
-        openRegist() {
-          this.showRegist = true;
+        // トースト
+        msg: null,
+        
+        // ページ右下に通知文を表示(2秒間)
+        toast(msg) {
+          this.msg = msg;
+          setTimeout(() => { this.msg = null }, 2000);
         },
-
-        // ユーザ登録をする
-        async regist() {
-          const r = await this.fetchAPI("regist", {
-            name: this.registName,
-            pass: this.registPass
-          });
-          if (r.err) {
-            this.alert("登録されています")
-            return;
-          }
-          localStorage.session = r.session;
-          this.closeRegist();
-          await this.reloadUser();
-          this.alert("ユーザ登録しました");
-          await this.reloadTimeline();
-        },
-
-        // ユーザ登録ダイアログを閉じる
-        closeRegist() {
-          this.showRegist = false;
-        },
-
-        // ログインダイアログを開く
-        openLogin() {
-          this.showLogin = true;
-        },
-
-        // ログインする
-        async login() {
-          const r = await this.fetchAPI("login", {
-            name: this.loginName,
-            pass: this.loginPass
-          });
-          if (r.err) {
-            this.alert("ユーザ名かパスワードが違います");
-            return;
-          }
-          localStorage.session = r.session;
-          this.closeLogin();
-          await this.reloadUser();
-          this.alert("ログインしました");
-          await this.reloadTimeline();
-        },
-
-        // ログインダイアログを閉じる
-        closeLogin() {
-          this.showLogin = false;
-        },
-
-        // ログアウトする
-        async logout() {
-          await this.fetchAPI("logout");
-          delete localStorage.session;
-          this.logined = false;
-          this.reloadUser();
-          this.alert("ログアウトしました")
-          await this.reloadTimeline();
-        }
       }));
 
       Alpine.start();
