@@ -1,20 +1,20 @@
 // Serverは[Server.js](https://fukuno.jig.jp/2943)を使います
 // HTMLファイルや画像はstaticフォルダに置きます
-import { Server } from "https://ninja03.github.io/denokun/lib/Server.js";
+import { Server } from "https://ninja03.github.io/denokun/lib/Server.js"
 
 // DBはデータはSQLiteに保存してdeno-sqliteで読み書きします
-import { DB } from "https://deno.land/x/sqlite@v3.0.0/mod.ts";
+import { DB } from "https://deno.land/x/sqlite@v3.0.0/mod.ts"
 
 // bcryptはパスワードハッシュ化用です
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.2.4/mod.ts";
+import * as bcrypt from "https://deno.land/x/bcrypt@v0.2.4/mod.ts"
 
 export class MyServer extends Server {
 
   constructor(dbname) {
-    super();
+    super()
 
     // SQLiteのデータベースを開きます
-    this.db = new DB(dbname);
+    this.db = new DB(dbname)
 
     // DBの初期化をします
     // テーブルがない場合に新しく作ります
@@ -27,8 +27,8 @@ export class MyServer extends Server {
         pass text not null,
         session text,
         time not null default (datetime ('now', 'localtime'))
-      );
-    `);
+      )
+    `)
 
     // 写真テーブル(いいね回数も保存)
     this.db.query(`
@@ -38,8 +38,8 @@ export class MyServer extends Server {
         url     text not null,
         good    integer not null default 0,
         time not null default (datetime ('now', 'localtime'))
-      );
-    `);
+      )
+    `)
 
     // いいねテーブル(ユーザーと写真でユニーク)
     this.db.query(`
@@ -48,8 +48,8 @@ export class MyServer extends Server {
         photo_id integer not null,
         time not null default (datetime ('now', 'localtime')),
         primary key(user_id, photo_id)
-      );
-    `);
+      )
+    `)
   }
 
   // パス(/api/xxx)とreq(JSONオブジェクト)が渡されます
@@ -57,56 +57,56 @@ export class MyServer extends Server {
   // レスポンスをJSONオブジェクトで返します
   // 何も返さないと「not found」という文字が返ります
   api(path, req) {
-    console.log(path, req);
+    console.log(path, req)
     // セッション不要API
     switch (path) {
-      case "/api/regist":          return this.regist(req);
-      case "/api/login":           return this.login(req);
-      case "/api/public_timeline": return this.publicTimeline(req);
+      case "/api/regist":          return this.regist(req)
+      case "/api/login":           return this.login(req)
+      case "/api/public_timeline": return this.publicTimeline(req)
     }
     // セッション必要API
     if (!("session" in req)) {
-      return;
+      return
     }
     // リクエストのセッションをDBのセッションと
     // 比較してユーザを特定します
     const user = this.db.queryEntries("select * from user where session = :session", {
       session: req.session
-    })[0];
+    })[0]
     if (!user) {
-      return;
+      return
     }
 
     switch (path) {
-      case "/api/user":     return this.getUser(user);
-      case "/api/logout":   return this.logout(user);
-      case "/api/timeline": return this.timeline(user, req);
-      case "/api/post":     return this.post(user, req);
-      case "/api/good":     return this.good(user, req);
+      case "/api/user":     return this.getUser(user)
+      case "/api/logout":   return this.logout(user)
+      case "/api/timeline": return this.timeline(user, req)
+      case "/api/post":     return this.post(user, req)
+      case "/api/good":     return this.good(user, req)
     }
   }
 
   // ログイン中のユーザ情報を返します
   getUser(user) {
-    return { name: user.name };
+    return { name: user.name }
   }
 
   // 新しいユーザを登録してセッションを返します
   regist(req) {
     const user = this.db.queryEntries("select * from user where name = :name", {
       name: req.name
-    })[0];
+    })[0]
     if (user) {
-      return { err: "登録されています" };
+      return { err: "登録されています" }
     }
-    const hashPass = bcrypt.hashSync(req.pass);
-    const session = crypto.randomUUID();
+    const hashPass = bcrypt.hashSync(req.pass)
+    const session = crypto.randomUUID()
     this.db.query("insert into user (name, pass, session) values (:name, :pass, :session)", {
       name: req.name,
       pass: hashPass,
       session: session
-    });
-    return { session };
+    })
+    return { session }
   }
 
   // ログインします
@@ -117,20 +117,20 @@ export class MyServer extends Server {
   login(req) {
     const user = this.db.queryEntries("select * from user where name = :name limit 1", {
       name: req.name
-    })[0];
+    })[0]
     if (!user) {
-      return { err: "登録されていません" };
+      return { err: "登録されていません" }
     }
     // ハッシュは2番目の引数に
     if (!bcrypt.compareSync(req.pass, user.pass)) {
-      return { err: "パスワードが違います" };
+      return { err: "パスワードが違います" }
     }
-    const session = crypto.randomUUID();
+    const session = crypto.randomUUID()
     this.db.query("update user set session = :session where id = :userId", {
       session: session,
       userId: user.id
-    });
-    return { session };
+    })
+    return { session }
   }
 
   // ログアウトします
@@ -138,20 +138,20 @@ export class MyServer extends Server {
   logout(user) {
     this.db.query("update user set session = null where id = :userId", {
       userId: user.id
-    });
-    return {};
+    })
+    return {}
   }
 
   // タイムラインをそのまま返す
   // いいねの多い順に並び替えて返す
   publicTimeline(req) {
-    let sortKey;
+    let sortKey
     if (req.sort === "new") {
-      sortKey = "id";
+      sortKey = "id"
     } else if (req.sort === "trend") {
-      sortKey = "good";
+      sortKey = "good"
     } else {
-      return null;
+      return null
     }
     return this.db.queryEntries(
       "select * from photo order by " + sortKey + " desc, id desc"
@@ -160,20 +160,20 @@ export class MyServer extends Server {
       url: a.url,
       good: a.good,
       mygood: false
-    }));
+    }))
   }
 
   // タイムライン(写真一覧)を返します
   timeline(user, req) {
     // タイムラインをそのまま返す
     // いいねの多い順に並び替えて返す
-    let sortKey;
+    let sortKey
     if (req.sort == "new") {
-      sortKey = "id";
+      sortKey = "id"
     } else if (req.sort == "trend") {
-      sortKey = "good";
+      sortKey = "good"
     } else {
-      return null;
+      return null
     }
     // ログインしていればそれぞれの写真に
     // いいねしたかも返します
@@ -187,7 +187,7 @@ export class MyServer extends Server {
       url: a.url,
       good: a.good,
       mygood: a.photo_id != null
-    }));
+    }))
   }
 
   // 写真を投稿します
@@ -197,7 +197,7 @@ export class MyServer extends Server {
     this.db.query("insert into photo (user_id, url) values(:userId, :url)", {
       userId: user.id,
       url: req.url
-    });
+    })
     return {}
   }
 
@@ -208,37 +208,37 @@ export class MyServer extends Server {
     const good = this.db.queryEntries("select * from good where user_id = :userId and photo_id = :photoId", {
       userId: user.id,
       photoId: req.photoId
-    })[0];
+    })[0]
     if (req.del && !good) {
-      return;
+      return
     } else if (!req.del && good) {
-      return;
+      return
     }
     // 2つのテーブルを変更するのでトランザクション処理をします
-    this.db.query("begin transaction");
+    this.db.query("begin transaction")
     if (req.del) {
       this.db.query("delete from good where user_id = :userId and photo_id = :photoId", {
         userId: user.id,
         photoId: req.photoId
-      });
+      })
       this.db.query("update photo set good = good - 1 where id = :id", {
         id: req.photoId
-      });
+      })
     } else {
       this.db.query("insert into good (user_id, photo_id) values(:userId, :photoId)", {
         userId: user.id,
         photoId: req.photoId
-      });
+      })
       this.db.query("update photo set good = good + 1 where id = :id", {
         id: req.photoId
-      });
+      })
     }
-    this.db.query("commit");
-    return {};
+    this.db.query("commit")
+    return {}
   }
 }
 
 // 80番ポートでサーバを起動
 if (import.meta.main) {
-  new MyServer("data.db").start(8881);
+  new MyServer("data.db").start(8881)
 }

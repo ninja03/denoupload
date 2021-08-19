@@ -72,9 +72,9 @@
     </div>
     
     <script type="module">
-      import Alpine from "https://unpkg.com/alpinejs@3.2.3/dist/module.esm.js";
-      import { fetchJSON } from "https://ninja03.github.io/denokun/lib/fetchJSON.js";
-      import { ImageUploader } from "https://ninja03.github.io/denokun/lib/ImageUploader.js";
+      import Alpine from "https://unpkg.com/alpinejs@3.2.3/dist/module.esm.js"
+      import { fetchJSON } from "https://ninja03.github.io/denokun/lib/fetchJSON.js"
+      import { ImageUploader } from "https://ninja03.github.io/denokun/lib/ImageUploader.js"
 
       Alpine.data("app", () => ({
         // CSSクラスで何回も使うのを定義しておきます
@@ -91,33 +91,33 @@
 
         // API通信
         async fetchAPI(path, req = {}) {
-          req.session = localStorage.session;
-          return await fetchJSON(this.server + "/api/" + path, req);
+          req.session = localStorage.session
+          return await fetchJSON(this.server + "/api/" + path, req)
         },
 
         // ページを開いたときはユーザ取得とタイムラインを取得
         async init() {
-          await this.reloadUser();
-          await this.reloadTimeline();
+          await this.reloadUser()
+          await this.reloadTimeline()
         },
 
         // ユーザ取得
         async reloadUser() {
           try {
-            const u = await this.fetchAPI("user");
-            this.logined = true;
-            this.userName = u.name;
+            const u = await this.fetchAPI("user")
+            this.logined = true
+            this.userName = u.name
           } catch {
-            this.logined = false;
-            this.userName = null;
+            this.logined = false
+            this.userName = null
           }
         },
 
         // タイムライン取得
         async reloadTimeline() {
-          const sort = { "新着順": "new", "人気順": "trend" }[this.sort];
-          const path = this.logined ? "timeline" : "public_timeline";
-          this.timeline = await this.fetchAPI(path, { sort: sort });
+          const sort = { "新着順": "new", "人気順": "trend" }[this.sort]
+          const path = this.logined ? "timeline" : "public_timeline"
+          this.timeline = await this.fetchAPI(path, { sort: sort })
         },
 
         // 並び替えボタン
@@ -125,21 +125,21 @@
 
         // タイムライン並び順変更
         async changeType() {
-          this.sort = this.sort === "新着順" ? "人気順" : "新着順";
-          await this.reloadTimeline();
+          this.sort = this.sort === "新着順" ? "人気順" : "新着順"
+          await this.reloadTimeline()
         },
 
         // いいねする
         async good(photo) {
           if (!this.logined) {
-            this.toast("ログインが必要です");
-            return;
+            this.toast("ログインが必要です")
+            return
           }
           await this.fetchAPI("good", {
             photoId: photo.id,
             del: photo.mygood
-          });
-          await this.reloadTimeline();
+          })
+          await this.reloadTimeline()
         },
       
         // ユーザ登録ダイアログ
@@ -149,12 +149,12 @@
 
         // ユーザ登録ダイアログを開く
         openRegist() {
-          this.showRegist = true;
+          this.showRegist = true
         },
 
         // ユーザ登録ダイアログを閉じる
         closeRegist() {
-          this.showRegist = false;
+          this.showRegist = false
         },
 
         // ユーザ登録をする
@@ -165,13 +165,13 @@
           });
           if (r.err) {
             this.toast("登録されています")
-            return;
+            return
           }
-          localStorage.session = r.session;
-          this.closeRegist();
-          await this.reloadUser();
-          this.toast("ユーザ登録しました");
-          await this.reloadTimeline();
+          localStorage.session = r.session
+          this.closeRegist()
+          await this.reloadUser()
+          this.toast("ユーザ登録しました")
+          await this.reloadTimeline()
         },
 
         // ログインダイアログ
@@ -181,12 +181,12 @@
 
         // ログインダイアログを開く
         openLogin() {
-          this.showLogin = true;
+          this.showLogin = true
         },
         
         // ログインダイアログを閉じる
         closeLogin() {
-          this.showLogin = false;
+          this.showLogin = false
         },
 
         // ログインする
@@ -194,26 +194,26 @@
           const r = await this.fetchAPI("login", {
             name: this.loginName,
             pass: this.loginPass
-          });
+          })
           if (r.err) {
-            this.toast("ユーザ名かパスワードが違います");
-            return;
+            this.toast("ユーザ名かパスワードが違います")
+            return
           }
-          localStorage.session = r.session;
-          this.closeLogin();
-          await this.reloadUser();
-          this.toast("ログインしました");
-          await this.reloadTimeline();
+          localStorage.session = r.session
+          this.closeLogin()
+          await this.reloadUser()
+          this.toast("ログインしました")
+          await this.reloadTimeline()
         },
 
         // ログアウトする
         async logout() {
-          await this.fetchAPI("logout");
-          delete localStorage.session;
-          this.logined = false;
-          this.reloadUser();
+          await this.fetchAPI("logout")
+          delete localStorage.session
+          this.logined = false
+          this.reloadUser()
           this.toast("ログアウトしました")
-          await this.reloadTimeline();
+          await this.reloadTimeline()
         },
 
         // アップロードダイアログ
@@ -222,33 +222,33 @@
 
         // アップロードダイアログを開く
         openUpload() {
-          this.showUpload = true;
+          this.showUpload = true
         },
 
         // アップロードダイアログを閉じる
         closeUpload() {
-          this.showUpload = false;
+          this.showUpload = false
         },
 
         // アップロードするファイルを選んだ
         fileSelected() {
-          const reader = new FileReader();
-          reader.onload = () => { this.preview = reader.result; }
-          reader.readAsDataURL(inputFile.files[0]);
+          const reader = new FileReader()
+          reader.onload = () => { this.preview = reader.result }
+          reader.readAsDataURL(inputFile.files[0])
         },
 
         // アップロードする
         upload() {
-          const f = inputFile.files[0];
-          let up = new ImageUploader(this.server + "/data/");
+          const f = inputFile.files[0]
+          let up = new ImageUploader(this.server + "/data/")
           // 最大幅1200px、最大ファイルサイズ1メガバイト
-          up.setFile(f, 1200, 1024 * 1024);
+          up.setFile(f, 1200, 1024 * 1024)
           up.onload = async url => {
-            await this.fetchAPI("post", { url });
-            this.up = f.name;
-            this.toast("「" + this.up + "をアップしました");
-            this.closeUpload();
-            this.reloadTimeline();
+            await this.fetchAPI("post", { url })
+            this.up = f.name
+            this.toast("「" + this.up + "をアップしました")
+            this.closeUpload()
+            this.reloadTimeline()
           }
         },
 
@@ -257,12 +257,12 @@
         
         // ページ右下に通知文を表示(2秒間)
         toast(msg) {
-          this.msg = msg;
-          setTimeout(() => { this.msg = null }, 2000);
+          this.msg = msg
+          setTimeout(() => { this.msg = null }, 2000)
         },
       }));
 
-      Alpine.start();
+      Alpine.start()
     </script>
   </body>
 </html>
