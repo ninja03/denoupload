@@ -5,4 +5,5 @@ WORKDIR /app
 COPY . .
 
 EXPOSE 8880
+EXPOSE 8881
 CMD ["run", "-A", "--unstable", "main.js"]
