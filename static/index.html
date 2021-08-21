@@ -211,7 +211,7 @@
           await this.fetchAPI("logout")
           delete localStorage.session
           this.logined = false
-          this.reloadUser()
+          await this.reloadUser()
           this.toast("ログアウトしました")
           await this.reloadTimeline()
         },
@@ -248,7 +248,7 @@
             this.up = f.name
             this.toast("「" + this.up + "をアップしました")
             this.closeUpload()
-            this.reloadTimeline()
+            await this.reloadTimeline()
           }
         },
 
@@ -266,5 +266,3 @@
     </script>
   </body>
 </html>
-
-

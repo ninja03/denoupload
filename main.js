@@ -238,7 +238,7 @@ export class MyServer extends Server {
   }
 }
 
-// 80番ポートでサーバを起動
+// 8881番ポートでサーバを起動
 if (import.meta.main) {
   new MyServer("data.db").start(8881)
 }
