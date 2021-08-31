@@ -1,5 +1,7 @@
 # denoupload
 
+詳細は[Webアプリ開発ガイド](https://ninja03.github.io/denokun/)
+
 Denoで画像アップロードといいねのサンプルプログラムです
 * run.batで起動します
 * ブラウザでhttp://localhost:8881/ を開きます
